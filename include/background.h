@@ -118,6 +118,12 @@ struct background
   double phi_ini_scf;      /**< \f$ \phi(t_0) \f$: scalar field initial value */
   double phi_prime_ini_scf;/**< \f$ d\phi(t_0)/d\tau \f$: scalar field initial derivative wrt conformal time */
   int scf_parameters_size; /**< size of scf_parameters */
+
+  /* Modified gravity parameters */
+  /** The coupling between the scalar field and R is F(phi) = (1+alpha*phi^2)/(2*kappa^2) */
+  double scf_alpha;  /** non-minimal coupling */
+  double scf_kappa2; /** bare gravitational constant */
+
   double varconst_alpha; /**< finestructure constant for varying fundamental constants */
   double varconst_me; /**< electron mass for varying fundamental constants */
   enum varconst_dependence varconst_dep; /**< dependence of the varying fundamental constants as a function of time */

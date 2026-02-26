@@ -3352,6 +3352,10 @@ int input_read_parameters_species(struct file_content * pfc,
         pba->phi_prime_ini_scf = pba->scf_parameters[pba->scf_parameters_size-1];
       }
     }
+    /* Modified gravity parameters */
+    /** The coupling between the scalar field and R is F(phi) = (1+alpha*phi^2)/(2*kappa^2) */
+    class_read_double("scf_alpha",pba->scf_alpha)
+    class_read_double("scf_kappa2",pba->scf_kappa2)
 
     /** 8.b.3) SCF tuning parameter */
     /* Read */
@@ -5928,6 +5932,11 @@ int input_default_params(struct background *pba,
   pba->phi_prime_ini_scf = 1;          //     factors of the radiation attractor values
   /** 9.b.3) Tuning parameter */
   pba->scf_tuning_index = 0;
+
+  /* Modified gravity parameters */
+  /** The coupling between the scalar field and R is F(phi) = (1+alpha*phi^2)/(2*kappa^2) */
+  pba->scf_alpha = 0.0;
+  pba->scf_kappa2 = 1.0;
 
   /**
    * Deafult to input_read_parameters_heating
