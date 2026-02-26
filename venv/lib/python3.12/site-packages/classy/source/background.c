@@ -576,11 +576,44 @@ int background_functions(
       only place where the Friedmann equation is assumed. Remember
       that densities are all expressed in units of \f$ [3c^2/8\pi G] \f$, ie
       \f$ \rho_{class} = [8 \pi G \rho_{physical} / 3 c^2]\f$ */
-  pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
+
+    if (pba->has_scf == _TRUE_ && pba->scf_alpha != 0.0) {
+      /* Modified Gravity: we have to solve a quadratic equation A*H^2 + B*H + C = 0 */
+      /* We assume no curvature */
+      double A_grav = 1.0 + pba->scf_alpha * phi * phi;
+      double B_grav = 2.0 * pba->scf_alpha * phi * (phi_prime / a);
+      double C_grav = - pba->scf_kappa2 * rho_tot;
+      /* Choose positive root */
+      pvecback[pba->index_bg_H] = (-B_grav + sqrt(B_grav*B_grav - 4.0*A_grav*C_grav)) / (2.0 * A_grav);
+    } 
+    else {
+      /* Standard General Relativity */
+      pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
+    }
 
   /** - compute derivative of H with respect to conformal time */
-  pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
-
+  
+    if (pba->has_scf == _TRUE_ && pba->scf_alpha != 0.0) {
+      
+      double H = pvecback[pba->index_bg_H];
+      double dV = pvecback[pba->index_bg_dV_scf];
+      double alpha = pba->scf_alpha;
+      double kappa2 = pba->scf_kappa2;
+      
+      double term1 = -3.0 * a * a * H * H * (1.0 + alpha * phi * phi + 8.0 * alpha * alpha * phi * phi / kappa2) ;
+      double term2 = -2.0 * alpha * (a * H * phi * phi_prime + phi_prime * phi_prime - a * a * phi * dV);
+      double term3 = -kappa2 * a * a * p_tot;
+      
+      double numerator = term1 + term2 + term3;
+      
+      double denominator = 2.0 * a * (1.0 + alpha * phi * phi + 6.0 * alpha * alpha * phi * phi / kappa2) ;
+      
+      pvecback[pba->index_bg_H_prime] = numerator / denominator;
+      
+    } else {
+      /* Standard General Relativity (Flat K=0) */
+      pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a;
+    }
   /* Total energy density*/
   pvecback[pba->index_bg_rho_tot] = rho_tot;
 
@@ -2664,9 +2697,29 @@ int background_derivs(
     /** - Scalar field equation: \f$ \phi'' + 2 a H \phi' + a^2 dV = 0 \f$  (note H is wrt cosmological time)
         written as \f$ d\phi/dlna = phi' / (aH) \f$ and \f$ d\phi'/dlna = -2*phi' - (a/H) dV \f$ */
     dy[pba->index_bi_phi_scf] = y[pba->index_bi_phi_prime_scf]/a/H;
-    dy[pba->index_bi_phi_prime_scf] = - 2*y[pba->index_bi_phi_prime_scf] - a*dV_scf(pba,y[pba->index_bi_phi_scf])/H ;
+    
+    if (pba->scf_alpha != 0.0) {
+      /* Modified Gravity Klein-Gordon Equation */
+      double phi = y[pba->index_bi_phi_scf];
+      double phi_prime = y[pba->index_bi_phi_prime_scf];
+      double dV = dV_scf(pba, phi);
+      double alpha = pba->scf_alpha;
+      double kappa2 = pba->scf_kappa2;
+      double H_prime = pvecback[pba->index_bg_H_prime]; /* H' obtained from background_functions */
+      
+      /* Ordinary GR terms */
+      double GR_term = - 2.0 * phi_prime - a * dV / H;
+      
+      /* Non-minimal coupling source term from F(phi)R */
+      double MG_term = (6.0 * alpha / kappa2) * (2.0 * a * H + H_prime / H) * phi;
+      
+      dy[pba->index_bi_phi_prime_scf] = GR_term + MG_term;
+      
+    } else {
+      /* Standard General Relativity */
+      dy[pba->index_bi_phi_prime_scf] = - 2.0*y[pba->index_bi_phi_prime_scf] - a*dV_scf(pba,y[pba->index_bi_phi_scf])/H ;
+    }
   }
-
   return _SUCCESS_;
 
 }
