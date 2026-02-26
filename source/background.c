@@ -590,7 +590,7 @@ int background_functions(
       /* Standard General Relativity */
       pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
     }
-
+    
   /** - compute derivative of H with respect to conformal time */
   
     if (pba->has_scf == _TRUE_ && pba->scf_alpha != 0.0) {
@@ -614,6 +614,26 @@ int background_functions(
       /* Standard General Relativity (Flat K=0) */
       pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a;
     }
+
+  if (pba->has_scf == _TRUE_ && pba->scf_alpha != 0.0) {
+    double H = pvecback[pba->index_bg_H];
+    double H_prime = pvecback[pba->index_bg_H_prime];
+    double kappa2 = pba->scf_kappa2;
+
+    /* Modified Gravity contribution to the density (H^2) */
+    double rho_MG = H * H - rho_tot;
+      
+    /* Add the MG contribution to the scalar field and the total density */
+    pvecback[pba->index_bg_rho_scf] += rho_MG;
+    rho_tot += rho_MG;
+
+    /* Modified Gravity contribution to the pressure (H^2) */
+    double p_MG = -(3.0 * H * H + 2.0 * H_prime / a) / (3.0 * kappa2) - p_tot;
+      
+    /* Add the MG contribution to the scalar field and the total pressure */
+    pvecback[pba->index_bg_p_scf] += p_MG;
+    p_tot += p_MG;
+  }
   /* Total energy density*/
   pvecback[pba->index_bg_rho_tot] = rho_tot;
 
