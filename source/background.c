@@ -628,7 +628,7 @@ int background_functions(
     rho_tot += rho_MG;
 
     /* Modified Gravity contribution to the pressure (H^2) */
-    double p_MG = -(3.0 * H * H + 2.0 * H_prime / a) / (3.0 * kappa2) - p_tot;
+    double p_MG = -(3.0 * H * H + 2.0 * H_prime / a) / 3.0 - p_tot;
       
     /* Add the MG contribution to the scalar field and the total pressure */
     pvecback[pba->index_bg_p_scf] += p_MG;
@@ -644,9 +644,12 @@ int background_functions(
   pvecback[pba->index_bg_p_tot_prime] = a*pvecback[pba->index_bg_H]*dp_dloga;
   if (pba->has_scf == _TRUE_) {
     /** The contribution of scf was not added to dp_dloga, add p_scf_prime here: */
-    pvecback[pba->index_bg_p_prime_scf] = pvecback[pba->index_bg_phi_prime_scf]*
-      (-pvecback[pba->index_bg_phi_prime_scf]*pvecback[pba->index_bg_H]/a-2./3.*pvecback[pba->index_bg_dV_scf]);
-    pvecback[pba->index_bg_p_tot_prime] += pvecback[pba->index_bg_p_prime_scf];
+  //   pvecback[pba->index_bg_p_prime_scf] = pvecback[pba->index_bg_phi_prime_scf]*
+  //     (-pvecback[pba->index_bg_phi_prime_scf]*pvecback[pba->index_bg_H]/a-2./3.*pvecback[pba->index_bg_dV_scf]);
+  //   pvecback[pba->index_bg_p_tot_prime] += pvecback[pba->index_bg_p_prime_scf];
+
+  /* Modified gravity. We do not compute p_prime_scf here. We do it numerically in background_solve.*/
+    pvecback[pba->index_bg_p_prime_scf] = 0.0;
   }
 
   /** - compute critical density */
@@ -2063,6 +2066,44 @@ int background_solve(
 
     pba->background_table[index_loga*pba->bg_size+pba->index_bg_ang_distance] = comoving_radius/(1.+pba->z_table[index_loga]);
     pba->background_table[index_loga*pba->bg_size+pba->index_bg_lum_distance] = comoving_radius*(1.+pba->z_table[index_loga]);
+  }
+
+  /** Modified gravity. 
+      Compute p_prime_scf and add it to the total pressure.*/
+  
+  if (pba->has_scf == _TRUE_) {
+    for (index_loga = 0; index_loga < pba->bt_size; index_loga++) {
+        
+      double delta_tau, delta_p_scf;
+      double p_prime_scf_num;
+
+      /* Forward difference for the first step */
+      if (index_loga == 0) {
+        delta_tau   = pba->tau_table[1] - pba->tau_table[0];
+        delta_p_scf = pba->background_table[1*pba->bg_size + pba->index_bg_p_scf] 
+                    - pba->background_table[0*pba->bg_size + pba->index_bg_p_scf];
+      }
+      /* Backward difference for the last step */
+      else if (index_loga == pba->bt_size - 1) {
+        delta_tau   = pba->tau_table[index_loga] - pba->tau_table[index_loga - 1];
+        delta_p_scf = pba->background_table[index_loga*pba->bg_size + pba->index_bg_p_scf] 
+                    - pba->background_table[(index_loga - 1)*pba->bg_size + pba->index_bg_p_scf];
+      }
+      /* Central difference for intermediate steps */
+      else {
+        delta_tau   = pba->tau_table[index_loga + 1] - pba->tau_table[index_loga - 1];
+        delta_p_scf = pba->background_table[(index_loga + 1)*pba->bg_size + pba->index_bg_p_scf] 
+                    - pba->background_table[(index_loga - 1)*pba->bg_size + pba->index_bg_p_scf];
+      }
+
+      p_prime_scf_num = delta_p_scf / delta_tau;
+
+      /* 1. Save to the p_prime_scf column */
+      pba->background_table[index_loga*pba->bg_size + pba->index_bg_p_prime_scf] = p_prime_scf_num;
+
+      /* 2. Add to the total pressure */
+      pba->background_table[index_loga*pba->bg_size + pba->index_bg_p_tot_prime] += p_prime_scf_num;
+    }
   }
 
   /** - fill tables of second derivatives (in view of spline interpolation) */
