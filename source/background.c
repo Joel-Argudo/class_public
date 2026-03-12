@@ -3061,7 +3061,7 @@ double ddV_p_scf(
 /** Fianlly we can obtain the overall potential \f$ V = V_p*V_e \f$
  */
 
-double V_scf(
+/* double V_scf(
              struct background *pba,
              double phi) {
   return  V_e_scf(pba,phi)*V_p_scf(pba,phi);
@@ -3077,4 +3077,33 @@ double ddV_scf(
                struct background *pba,
                double phi) {
   return ddV_e_scf(pba,phi)*V_p_scf(pba,phi) + 2*dV_e_scf(pba,phi)*dV_p_scf(pba,phi) + V_e_scf(pba,phi)*ddV_p_scf(pba,phi);
+} */
+
+/**
+ * Scalar field potential (polynomial).
+ */
+
+double V_scf(
+             struct background *pba,
+             double phi) {
+  double V0 = pba->scf_parameters[0];
+  double beta = pba->scf_parameters[1];
+  double m2 = pba->scf_parameters[2];
+  return  V0 + beta * phi + 0.5 * m2 * phi * phi;
 }
+
+double dV_scf(
+              struct background *pba,
+              double phi) {
+  double beta = pba->scf_parameters[1];
+  double m2 = pba->scf_parameters[2];
+  return  beta +  m2 * phi;
+  
+}
+
+double ddV_scf(
+               struct background *pba,
+               double phi) {
+  double m2 = pba->scf_parameters[2];
+  return m2;
+} 

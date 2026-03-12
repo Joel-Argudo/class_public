@@ -1240,8 +1240,10 @@ int input_get_guess(double *xguess,
        * Version 3: use attractor solution
        * */
       if (ba.scf_tuning_index == 0){
-        xguess[index_guess] = sqrt(3.0/ba.Omega0_scf);
-        dxdy[index_guess] = -0.5*sqrt(3.0)*pow(ba.Omega0_scf,-1.5);
+        /* xguess[index_guess] = sqrt(3.0/ba.Omega0_scf);
+        dxdy[index_guess] = -0.5*sqrt(3.0)*pow(ba.Omega0_scf,-1.5);*/
+        xguess[index_guess] = 1e-8;
+        dxdy[index_guess] = 1e-6;
       }
       else{
         /* Default: take the passed value as xguess and set dxdy to 1. */
