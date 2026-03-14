@@ -616,23 +616,35 @@ int background_functions(
     }
 
   if (pba->has_scf == _TRUE_ && pba->scf_alpha != 0.0) {
+    /* Modified Gravity. Dark Energy pressure and density. */
+
     double H = pvecback[pba->index_bg_H];
     double H_prime = pvecback[pba->index_bg_H_prime];
     double kappa2 = pba->scf_kappa2;
+    double alpha = pba->scf_alpha;
+    double V = pvecback[pba->index_bg_V_scf];
+    double dV = pvecback[pba->index_bg_dV_scf];
 
-    /* Modified Gravity contribution to the density (H^2) */
-    double rho_MG = H * H - rho_tot;
-      
-    /* Add the MG contribution to the scalar field and the total density */
-    pvecback[pba->index_bg_rho_scf] += rho_MG;
-    rho_tot += rho_MG;
+    /* Substract quintessence contribution, which was added before. */
+    rho_tot += - pvecback[pba->index_bg_rho_scf];
+    p_tot += - pvecback[pba->index_bg_p_scf];
 
-    /* Modified Gravity contribution to the pressure (H^2) */
-    double p_MG = -(3.0 * H * H + 2.0 * H_prime / a) / 3.0 - p_tot;
+    /* Scalar field second derivative (from the modified KG equation). */
+    double ddphi = -2. * a * H * phi_prime + 6. * alpha / kappa2 / 3. * (2. * a * a * H * H + a * H_prime) * phi - a * a * dV;
+
+    /* Dark Energy pressure. */
+    double p_DE = kappa2/(1. + alpha * phi * phi) * (2. * alpha / kappa2 / 3. * (2. * H * phi * phi_prime / a + phi_prime * phi_prime / a / a + phi * ddphi / a / a - H * phi * phi_prime / a) + 0.5 * phi_prime * phi_prime / a / a - V + p_tot) - p_tot;
+
+    /* Dark Energy density. */
+    double rho_DE = kappa2/(1. + alpha * phi * phi) * (-6. * alpha / kappa2 / 3. * H * phi * phi_prime / a  + 0.5 * phi_prime * phi_prime / a / a + V + rho_tot) - rho_tot;
+
+    /* Add the DE contribution to the scalar field and the total density */
+    pvecback[pba->index_bg_rho_scf] = rho_DE;
+    rho_tot += rho_DE;
       
-    /* Add the MG contribution to the scalar field and the total pressure */
-    pvecback[pba->index_bg_p_scf] += p_MG;
-    p_tot += p_MG;
+    /* Add the DE contribution to the scalar field and the total pressure */
+    pvecback[pba->index_bg_p_scf] = p_DE;
+    p_tot += p_DE;
   }
   /* Total energy density*/
   pvecback[pba->index_bg_rho_tot] = rho_tot;
