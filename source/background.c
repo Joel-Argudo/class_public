@@ -600,13 +600,13 @@ int background_functions(
       double alpha = pba->scf_alpha;
       double kappa2 = pba->scf_kappa2;
       
-      double term1 = -3.0 * a * a * H * H * (1.0 + alpha * phi * phi + 8.0 * alpha * alpha * phi * phi / 3.0 / kappa2) ;
-      double term2 = -2.0 * alpha * (a * H * phi * phi_prime + phi_prime * phi_prime - a * a * phi * dV);
-      double term3 = -3.0 * kappa2 * a * a * p_tot;
+      double term1 = -3.0 * a * H * H * (1.0 + alpha * phi * phi + 8.0 * alpha * alpha * phi * phi / 3.0 / kappa2) ;
+      double term2 = -2.0 * alpha * (H * phi * phi_prime + phi_prime * phi_prime / a - a * phi * dV);
+      double term3 = -3.0 * kappa2 * a * p_tot;
       
       double numerator = term1 + term2 + term3;
       
-      double denominator = 2.0 * a * (1.0 + alpha * phi * phi + 2.0 * alpha * alpha * phi * phi / kappa2) ;
+      double denominator = 2.0 * (1.0 + alpha * phi * phi + 2.0 * alpha * alpha * phi * phi / kappa2) ;
       
       pvecback[pba->index_bg_H_prime] = numerator / denominator;
       
