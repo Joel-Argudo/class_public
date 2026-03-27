@@ -6607,9 +6607,38 @@ int perturbations_einstein(
     /* synchronous gauge */
     if (ppt->gauge == synchronous) {
 
+      /* Modified Gravity */
+      double scf_alpha = pba->scf_alpha;
+      double kappa2 = pba->scf_kappa2;
+      double phi = ppw->pvecback[pba->index_bg_phi_scf];
+      double phi_prime = ppw->pvecback[pba->index_bg_phi_prime_scf];
+      double dV = ppw->pvecback[pba->index_bg_dV_scf];
+      double ddV = ppw->pvecback[pba->index_bg_ddV_scf];
+      double delta_phi = y[ppw->pv->index_pt_phi_scf];
+      double delta_phi_prime = y[ppw->pv->index_pt_phi_prime_scf];
+      double H = ppw->pvecback[pba->index_bg_H];
+      double H_prime = ppw->pvecback[pba->index_bg_H_prime];
+      double a_prime_prime_over_a = (2.0 * a2 * H * H) + a * H_prime;
+      double phi_prime_prime = (- 2.0 * phi_prime - a * dV / H + (2.0 * scf_alpha / kappa2) * (2.0 * a * H + H_prime / H) * phi) * a * H;
+      double term_1, term_2, term_3, term_4, term_5, term_6, term_7, term_8,piece_1, piece_2,numerator, denominator;
+      
       /* first equation involving total density fluctuation */
-      ppw->pvecmetric[ppw->index_mt_h_prime] =
-        ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
+
+      // ppw->pvecmetric[ppw->index_mt_h_prime] =
+      //   ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
+
+      /* Modified Gravity */
+
+      term_1 = -2. * scf_alpha * (3. * (a_prime_over_a * a_prime_over_a) + k2) * phi * delta_phi;
+      term_2 = -6. * scf_alpha * a_prime_over_a * (phi * delta_phi_prime + phi_prime * delta_phi);
+      term_3 = 3. * kappa2 * (phi_prime * delta_phi_prime + a2 * dV * delta_phi + a2 * ppw->delta_rho);
+      term_4 = 2. * (1. + scf_alpha * phi * phi) * k2 * y[ppw->pv->index_pt_eta];
+
+      numerator = term_1 + term_2 + term_3 + term_4;
+      denominator = (1. + scf_alpha * phi * phi) * a_prime_over_a + scf_alpha * phi * phi_prime;
+
+      ppw->pvecmetric[ppw->index_mt_h_prime] = numerator / denominator;  /* h' */
+
 
       /* eventually, infer radiation streaming approximation for
          gamma and ur (this is exactly the right place to do it
@@ -6632,13 +6661,47 @@ int perturbations_einstein(
       }
 
       /* second equation involving total velocity */
-      ppw->pvecmetric[ppw->index_mt_eta_prime] = (1.5 * a2 * ppw->rho_plus_p_theta + 0.5 * pba->K * ppw->pvecmetric[ppw->index_mt_h_prime])/k2/s2_squared;  /* eta' */
 
+      // ppw->pvecmetric[ppw->index_mt_eta_prime] = (1.5 * a2 * ppw->rho_plus_p_theta + 0.5 * pba->K * ppw->pvecmetric[ppw->index_mt_h_prime])/k2/s2_squared;  /* eta' */
+
+      /* Modified Gravity */
+
+      term_1 = a2 / k2 * ppw->rho_plus_p_theta + phi_prime * delta_phi; 
+      term_2 = 2. * scf_alpha / 3. / kappa2 * (phi * delta_phi_prime + phi_prime * delta_phi - a_prime_over_a * phi * delta_phi);
+      
+      ppw->pvecmetric[ppw->index_mt_eta_prime] = 3. * kappa2 * (term_1 + term_2) / (2. * (1. + scf_alpha * phi * phi));  /* eta' */
+      
       /* third equation involving total pressure */
-      ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
-        - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
-        + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
-        - 9. * a2 * ppw->delta_p;
+
+      // ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
+      //   - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
+      //   + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
+      //   - 9. * a2 * ppw->delta_p;
+
+      /* Modified Gravity */
+
+      double eta = y[ppw->pv->index_pt_eta];
+      double h_prime = ppw->pvecmetric[ppw->index_mt_h_prime];
+
+      term_1 = 2. * scf_alpha / kappa2 * a_prime_prime_over_a * delta_phi - 2. * a_prime_over_a  * delta_phi_prime;
+      term_2 = - k2 * delta_phi - 0.5 * h_prime * phi_prime - a2 * ddV * delta_phi;
+      piece_1 = term_1 + term_2;
+
+      term_3 = a_prime_over_a * h_prime - 2. * k2 * eta - 9. * kappa2 * (a2 * ppw->delta_p + phi_prime * delta_phi_prime - a2 * dV * delta_phi) / (1. + scf_alpha * phi * phi);
+      term_4 = 3. * (2. * a_prime_prime_over_a - a_prime_over_a * a_prime_over_a) * phi * delta_phi + 3. * a_prime_over_a * (phi * delta_phi_prime + phi_prime * delta_phi);
+      term_5 = 3. * (phi_prime_prime * delta_phi + 2. * phi_prime * delta_phi_prime) + 2. * k2 * phi * delta_phi + h_prime * phi * phi_prime;
+      piece_2 = term_3 - 2. * scf_alpha / (1. + scf_alpha * phi * phi) * (term_4 + term_5);
+
+      numerator = (piece_1 + scf_alpha / 3. / kappa2 * phi * piece_2);
+      denominator = 1. + 2. * scf_alpha * scf_alpha * phi * phi / kappa2 / (1. + scf_alpha * phi * phi);
+
+      double delta_phi_prime_prime =  numerator / denominator;
+
+      term_6 = -2. * a_prime_over_a * h_prime + 2. * k2 * eta - 9. * kappa2 * (a2 * ppw->delta_p + phi_prime * delta_phi_prime - a2 * dV * delta_phi) / (1. + scf_alpha * phi * phi);
+      term_7 = 3. * (2. * a_prime_prime_over_a - a_prime_over_a * a_prime_over_a) * phi * delta_phi + 3. * a_prime_over_a * (phi * delta_phi_prime + phi_prime * delta_phi);
+      term_8 = 3. * (phi_prime_prime * delta_phi + 2. * phi_prime * delta_phi_prime + phi * delta_phi_prime_prime) + 2. * k2 * phi * delta_phi + h_prime * phi * phi_prime;
+
+      ppw->pvecmetric[ppw->index_mt_h_prime_prime] = term_6 - 2. * scf_alpha / (1. + scf_alpha * phi * phi) * (term_7 + term_8);
 
       /* alpha = (h'+6eta')/2k^2 */
       ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
@@ -6668,10 +6731,19 @@ int perturbations_einstein(
       }
 
       /* fourth equation involving total shear */
-      ppw->pvecmetric[ppw->index_mt_alpha_prime] =  //TBC
-        - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_alpha]
-        + y[ppw->pv->index_pt_eta]
-        - 4.5 * (a2/k2) * ppw->rho_plus_p_shear;
+
+      // ppw->pvecmetric[ppw->index_mt_alpha_prime] =  //TBC
+      //   - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_alpha]
+      //   + y[ppw->pv->index_pt_eta]
+      //   - 4.5 * (a2/k2) * ppw->rho_plus_p_shear;
+      
+      /* Modified Gravity */
+
+      double alpha_pert = ppw->pvecmetric[ppw->index_mt_alpha];
+      term_1 = - 2. * scf_alpha * (phi * delta_phi + alpha_pert * phi * phi_prime);
+      term_2 = - 9. / 2. * kappa2 * a2 * ppw->rho_plus_p_shear / k2;
+
+      ppw->pvecmetric[ppw->index_mt_alpha_prime] = eta - 2. * a_prime_over_a * alpha_pert + (term_1 + term_2) / (1. + scf_alpha * phi * phi);
 
     }
 
@@ -7140,12 +7212,16 @@ int perturbations_total_stress_energy(
     if (pba->has_scf == _TRUE_) {
 
       if (ppt->gauge == synchronous){
-        delta_rho_scf =  1./3.*
-          (1./a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
-           + ppw->pvecback[pba->index_bg_dV_scf]*y[ppw->pv->index_pt_phi_scf]);
-        delta_p_scf = 1./3.*
-          (1./a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
-           - ppw->pvecback[pba->index_bg_dV_scf]*y[ppw->pv->index_pt_phi_scf]);
+        // delta_rho_scf =  1./3.*
+        //   (1./a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
+        //    + ppw->pvecback[pba->index_bg_dV_scf]*y[ppw->pv->index_pt_phi_scf]);
+        // delta_p_scf = 1./3.*
+        //   (1./a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
+        //    - ppw->pvecback[pba->index_bg_dV_scf]*y[ppw->pv->index_pt_phi_scf]);
+
+        /* Modified Gravity */
+        delta_rho_scf = 0.;
+        delta_p_scf = 0.;
       }
       else{
         /* equation for psi */
@@ -9400,9 +9476,42 @@ int perturbations_derivs(double tau,
 
       /** - ----> Klein Gordon equation */
 
-      dy[pv->index_pt_phi_prime_scf] =  - 2.*a_prime_over_a*y[pv->index_pt_phi_prime_scf]
-        - metric_continuity*pvecback[pba->index_bg_phi_prime_scf] //  metric_continuity = h'/2
-        - (k2 + a2*pvecback[pba->index_bg_ddV_scf])*y[pv->index_pt_phi_scf]; //checked
+      // dy[pv->index_pt_phi_prime_scf] =  - 2.*a_prime_over_a*y[pv->index_pt_phi_prime_scf]
+      //   - metric_continuity*pvecback[pba->index_bg_phi_prime_scf] //  metric_continuity = h'/2
+      //   - (k2 + a2*pvecback[pba->index_bg_ddV_scf])*y[pv->index_pt_phi_scf]; //checked
+
+      /* Modified Gravity */
+
+      double scf_alpha = pba->scf_alpha;
+      double kappa2 = pba->scf_kappa2;
+      double phi = pvecback[pba->index_bg_phi_scf];
+      double phi_prime = pvecback[pba->index_bg_phi_prime_scf];
+      double dV = pvecback[pba->index_bg_dV_scf];
+      double ddV = pvecback[pba->index_bg_ddV_scf];
+      double delta_phi = y[pv->index_pt_phi_scf];
+      double delta_phi_prime = y[pv->index_pt_phi_prime_scf];
+      double H = pvecback[pba->index_bg_H];
+      double H_prime = pvecback[pba->index_bg_H_prime];
+      double a_prime_prime_over_a = (2.0 * a2 * H * H) + a * H_prime;
+      double phi_prime_prime = (- 2.0 * phi_prime - a * dV / H + (2.0 * scf_alpha / kappa2) * (2.0 * a * H + H_prime / H) * phi) * a * H;
+      double term_1, term_2, term_3, term_4, term_5, piece_1, piece_2, numerator, denominator;
+      
+      double eta = y[pv->index_pt_eta];
+      double h_prime = 2. * metric_continuity;
+
+      term_1 = 2. * scf_alpha / kappa2 * a_prime_prime_over_a * delta_phi - 2. * a_prime_over_a  * delta_phi_prime;
+      term_2 = - k2 * delta_phi - 0.5 * h_prime * phi_prime - a2 * ddV * delta_phi;
+      piece_1 = term_1 + term_2;
+
+      term_3 = a_prime_over_a * h_prime - 2. * k2 * eta - 9. * kappa2 * (a2 * ppw->delta_p + phi_prime * delta_phi_prime - a2 * dV * delta_phi) / (1. + scf_alpha * phi * phi);
+      term_4 = 3. * (2. * a_prime_prime_over_a - a_prime_over_a * a_prime_over_a) * phi * delta_phi + 3. * a_prime_over_a * (phi * delta_phi_prime + phi_prime * delta_phi);
+      term_5 = 3. * (phi_prime_prime * delta_phi + 2. * phi_prime * delta_phi_prime) + 2. * k2 * phi * delta_phi + h_prime * phi * phi_prime;
+      piece_2 = term_3 - 2. * scf_alpha / (1. + scf_alpha * phi * phi) * (term_4 + term_5);
+
+      numerator = (piece_1 + scf_alpha / 3. / kappa2 * phi * piece_2);
+      denominator = 1. + 2. * scf_alpha * scf_alpha * phi * phi / kappa2 / (1. + scf_alpha * phi * phi);
+
+      dy[pv->index_pt_phi_prime_scf] =  numerator / denominator;
 
     }
 
