@@ -6620,7 +6620,7 @@ int perturbations_einstein(
       double H_prime = ppw->pvecback[pba->index_bg_H_prime];
       double a_prime_prime_over_a = (2.0 * a2 * H * H) + a * H_prime;
       double phi_prime_prime = (- 2.0 * phi_prime - a * dV / H + (2.0 * scf_alpha / kappa2) * (2.0 * a * H + H_prime / H) * phi) * a * H;
-      double term_1, term_2, term_3, term_4, term_5, term_6, term_7, term_8,piece_1, piece_2,numerator, denominator;
+      double term_1, term_2, term_3, term_4, term_5, term_6, term_7, term_8, piece_1, piece_2, numerator, denominator;
       
       /* first equation involving total density fluctuation */
 
@@ -7237,14 +7237,16 @@ int perturbations_total_stress_energy(
            - 1./a2*pow(ppw->pvecback[pba->index_bg_phi_prime_scf],2)*psi);
       }
 
+      /* Modified Gravity */
+
       ppw->delta_rho += delta_rho_scf;
 
-      ppw->rho_plus_p_theta +=  1./3.*
-        k*k/a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_scf];
+      // ppw->rho_plus_p_theta +=  1./3.*
+      //   k*k/a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_scf];
 
       ppw->delta_p += delta_p_scf;
 
-      ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_scf]+ppw->pvecback[pba->index_bg_p_scf];
+      // ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_scf]+ppw->pvecback[pba->index_bg_p_scf];
 
     }
 
