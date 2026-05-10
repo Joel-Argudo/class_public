@@ -640,11 +640,11 @@ int background_functions(
 
     /* Add the DE contribution to the scalar field and the total density */
     pvecback[pba->index_bg_rho_scf] = rho_DE;
-    // rho_tot += rho_DE;
+    rho_tot += rho_DE;
       
     /* Add the DE contribution to the scalar field and the total pressure */
     pvecback[pba->index_bg_p_scf] = p_DE;
-    // p_tot += p_DE;
+    p_tot += p_DE;
   }
   /* Total energy density*/
   pvecback[pba->index_bg_rho_tot] = rho_tot;
@@ -2114,7 +2114,7 @@ int background_solve(
       pba->background_table[index_loga*pba->bg_size + pba->index_bg_p_prime_scf] = p_prime_scf_num;
 
       /* 2. Add to the total pressure */
-      // pba->background_table[index_loga*pba->bg_size + pba->index_bg_p_tot_prime] += p_prime_scf_num;
+      pba->background_table[index_loga*pba->bg_size + pba->index_bg_p_tot_prime] += p_prime_scf_num;
     }
   }
 
