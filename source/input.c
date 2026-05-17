@@ -1240,10 +1240,27 @@ int input_get_guess(double *xguess,
        * Version 3: use attractor solution
        * */
       if (ba.scf_tuning_index == 0){
+        /* Modified Gravity */
+
         /* xguess[index_guess] = sqrt(3.0/ba.Omega0_scf);
         dxdy[index_guess] = -0.5*sqrt(3.0)*pow(ba.Omega0_scf,-1.5);*/
+
+        int has_param;          
+        double temp_val;
+
         xguess[index_guess] = 1e-8;
-        dxdy[index_guess] = 1e-6;
+        dxdy[index_guess] = 1e-6; 
+
+        if (ba.scf_parameters[ba.scf_tuning_index] != 0.) {
+          xguess[index_guess] = ba.scf_parameters[ba.scf_tuning_index];
+        }
+  
+        class_call(parser_read_double(&(pfzw->fc), "dV0_guess", &temp_val, &has_param, errmsg),
+                   errmsg, errmsg);
+        if (has_param == _TRUE_) {
+            dxdy[index_guess] = temp_val;
+        }
+        
       }
       else{
         /* Default: take the passed value as xguess and set dxdy to 1. */
@@ -3356,8 +3373,11 @@ int input_read_parameters_species(struct file_content * pfc,
     }
     /* Modified gravity parameters */
     /** The coupling between the scalar field and R is F(phi) = (1+alpha*phi^2)/(2*kappa^2) */
-    class_read_double("scf_alpha",pba->scf_alpha)
-    class_read_double("scf_kappa2",pba->scf_kappa2)
+    class_read_double("scf_alpha",pba->scf_alpha);
+    class_read_double("scf_kappa2",pba->scf_kappa2);
+
+    double dummy_dV0;
+    class_read_double("dV0_guess", dummy_dV0);
 
     /** 8.b.3) SCF tuning parameter */
     /* Read */
