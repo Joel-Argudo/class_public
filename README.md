@@ -2,6 +2,7 @@ Scalar-tensor CLASS
 ==============================================
 
 Author: Joel Argudo Panes
+
 Advisor: Adrià Gómez-Valent
 
 This code was developed as part of my master's thesis (TFM) at the University of Barcelona. 
