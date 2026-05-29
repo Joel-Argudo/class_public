@@ -1,120 +1,41 @@
-CLASS: Cosmic Linear Anisotropy Solving System  {#mainpage}
+Scalar-tensor CLASS 
 ==============================================
 
-Authors: Julien Lesgourgues, Thomas Tram, Nils Schoeneberg
+Author: Joel Argudo Panes
 
-with several major inputs from other people, especially Benjamin
-Audren, Simon Prunet, Jesus Torrado, Miguel Zumalacarregui, Francesco
-Montanari, Deanna Hooper, Samuel Brieden, Daniel Meinert, Matteo Lucca, etc.
-
-For download and information, see http://class-code.net
-
-
-Compiling CLASS and getting started
------------------------------------
-
-(the information below can also be found on the webpage, just below
-the download button)
-
-Download the code from the webpage and unpack the archive (tar -zxvf
-class_vx.y.z.tar.gz), or clone it from
-https://github.com/lesgourg/class_public. Go to the class directory
-(cd class/ or class_public/ or class_vx.y.z/) and compile (make clean;
-make class). You can usually speed up compilation with the option -j:
-make -j class. If the first compilation attempt fails, you may need to
-open the Makefile and adapt the name of the compiler (default: gcc),
-of the optimization flag (default: -O4 -ffast-math) and of the OpenMP
-flag (default: -fopenmp; this flag is facultative, you are free to
-compile without OpenMP if you don't want parallel execution; note that
-you need the version 4.2 or higher of gcc to be able to compile with
--fopenmp). Many more details on the CLASS compilation are given on the
-wiki page
-
-https://github.com/lesgourg/class_public/wiki/Installation
-
-(in particular, for compiling on Mac >= 10.9 despite of the clang
-incompatibility with OpenMP).
-
-To check that the code runs, type:
-
-    ./class explanatory.ini
-
-The explanatory.ini file is THE reference input file, containing and
-explaining the use of all possible input parameters. We recommend to
-read it, to keep it unchanged (for future reference), and to create
-for your own purposes some shorter input files, containing only the
-input lines which are useful for you. Input files must have a *.ini
-extension. We provide an example of an input file containing a
-selection of the most used parameters, default.ini, that you may use as a
-starting point.
-
-If you want to play with the precision/speed of the code, you can use
-one of the provided precision files (e.g. cl_permille.pre) or modify
-one of them, and run with two input files, for instance:
-
-    ./class test.ini cl_permille.pre
-
-The files *.pre are suppposed to specify the precision parameters for
-which you don't want to keep default values. If you find it more
-convenient, you can pass these precision parameter values in your *.ini
-file instead of an additional *.pre file.
-
-The automatically-generated documentation is located in
-
-    doc/manual/html/index.html
-    doc/manual/CLASS_manual.pdf
-
-On top of that, if you wish to modify the code, you will find lots of
-comments directly in the files.
-
-Python
-------
-
-To use CLASS from python, or ipython notebooks, or from the Monte
-Python parameter extraction code, you need to compile not only the
-code, but also its python wrapper. This can be done by typing just
-'make' instead of 'make class' (or for speeding up: 'make -j'). More
-details on the wrapper and its compilation are found on the wiki page
-
-https://github.com/lesgourg/class_public/wiki
-
-Plotting utility
-----------------
-
-Since version 2.3, the package includes an improved plotting script
-called CPU.py (Class Plotting Utility), written by Benjamin Audren and
-Jesus Torrado. It can plot the Cl's, the P(k) or any other CLASS
-output, for one or several models, as well as their ratio or percentage
-difference. The syntax and list of available options is obtained by
-typing 'pyhton CPU.py -h'. There is a similar script for MATLAB,
-written by Thomas Tram. To use it, once in MATLAB, type 'help
-plot_CLASS_output.m'
-
-Developing the code
+Model
 --------------------
 
-If you want to develop the code, we suggest that you download it from
-the github webpage
+CLASS code modification that introduces a non-minimal coupling between the scalar field and the Ricci scalar of the form $F(\varphi)R$, with $F(\varphi) = \frac{1+\alpha\varphi^2}{2\kappa^2}$. The scalar field has a canonical kinetic term and a quadratic potential $V = V_0 + \beta \varphi + 0.5 m^2 \varphi^2$.
 
-https://github.com/lesgourg/class_public
+Units
+--------------------
 
-rather than from class-code.net. Then you will enjoy all the feature
-of git repositories. You can even develop your own branch and get it
-merged to the public distribution. For related instructions, check
+Dimensionless variables:
 
-https://github.com/lesgourg/class_public/wiki/Public-Contributing
+$$\bar{V}_0 \equiv \frac{V_0}{H_0^2 \bar{M}_p^2}, \quad \bar{\varphi} \equiv \frac{\varphi}{\bar{M}_p}, \quad\bar{\kappa} \equiv \frac{\kappa}{\kappa_N}, \quad\bar{\alpha} \equiv \frac{\alpha}{\kappa_N^2}, \quad\bar{\beta} \equiv \frac{\beta}{H_0^2 \bar{M}_p}, \quad\bar{m} \equiv \frac{m}{H_0},$$
 
-Using the code
---------------
+where $\bar{M}_p^2 = 1/(8\pi G_N) \equiv 1/\kappa_N^2$.
 
-You can use CLASS freely, provided that in your publications, you cite
-at least the paper `CLASS II: Approximation schemes <http://arxiv.org/abs/1104.2933>`. Feel free to cite more CLASS papers!
+CLASS units:
 
-Support
--------
+$$\varphi_c = \frac{\bar{\varphi}}{\sqrt{3}}, \quad \kappa^2_c = \bar{\kappa}^2, \quad \alpha_c = 3\bar{\alpha}, \quad V_{0}^c = \frac{H_0^2}{3}\bar{V}_0, \quad \beta_c = \frac{H_0^2}{\sqrt{3}}\bar{\beta},  \quad m_c = H_0\bar{m}.$$
 
-To get support, please open a new issue on the
+Code modifications
+--------------------
 
-https://github.com/lesgourg/class_public
+- In `include/background.h`: Defined the modified gravity parameters $\alpha$ and $\kappa^2$ as `scf_alpha` and `scf_kappa2`.
+- In `source/input.c`: Added the reading and default values (0.0, 1.0) of `scf_alpha` and `scf_kappa2`.
+- In `source/input.c`: Turned the shooting parameters `xguess` and `dxdy`, used to tune $V_0$, into input parameters.
+- In `source/input.c`: Modified the values of `x1` and `dxdy`, used in the shooting algorithm that tunes $V_0$.
+- In `source/background.c`: Modified the equations that compute $H$ and $H'$ inside `background_functions()`.
+- In `source/background.c`: Modified the scalar field background equation for $\bar{\varphi}''$ inside `background_derivs()`.
+- In `source/background.c`: Modified the DE effective pressure and energy density.
+- In `source/background.c`: Defined the scalar field potential and its derivatives.
+- In `source/background.c`: Modified the computation of the time derivative of the DE effective pressure inside `solve_background()`.
+- In `source/perturbations.c`: Modified the equations that compute $h'$, $\eta'$, $h''$ and $\tilde{\alpha}'$ (inside `perturbations_einstein()`), and $\delta\varphi''$ (inside `perturbations_derivs()`). $\tilde{\alpha}$ is defined as $\tilde{\alpha} \equiv (h'+\eta')/(2k^2)$.
+- In `source/perturbations.c`: Eliminated the DE contributions to fluid perturbations ($\delta\rho$, $\delta p$, etc.).
 
-webpage!
+Limitations
+--------------------
+So far, this code only supports a flat Universe, scalar modes and the synchronous gauge. Additionally, the shooting method may fail to converge in specific regions of parameter space depending on the values of `xguess` (the initial guess for $V_0$) and `dxdy`. Finally, we recommend setting $a_{ini} \sim 10^{-11}$ as the background integrator may crash for smaller values.
