@@ -37,6 +37,7 @@ Code modifications
 - In `source/background.c`: Modified the DE effective pressure and energy density.
 - In `source/background.c`: Defined the scalar field potential and its derivatives.
 - In `source/background.c`: Modified the computation of the time derivative of the DE effective pressure inside `solve_background()`.
+- In `source/background.c`: Removed scalar field contribution to rho_m and rho_r.
 - In `source/perturbations.c`: Modified the equations that compute $h'$, $\eta'$, $h''$ and $\tilde{\alpha}'$ (inside `perturbations_einstein()`), and $\delta\varphi''$ (inside `perturbations_derivs()`). $\tilde{\alpha}$ is defined as $\tilde{\alpha} \equiv (h'+\eta')/(2k^2)$.
 - In `source/perturbations.c`: Eliminated the DE contributions to fluid perturbations ($\delta\rho$, $\delta p$, etc.).
 
